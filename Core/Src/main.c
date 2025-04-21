@@ -107,11 +107,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  char* message = "Message 1\r\n";
-//	  CDC_Transmit(0, (uint8_t *)message, strlen(message));
+	  char* message = "Message 1\r\n";
+	  CDC_Transmit(0, (uint8_t *)message, strlen(message));
 
-//	  message = "Message 2\r\n";
-//	  CDC_Transmit(1, (uint8_t *)message, strlen(message));
+	  message = "Message 2\r\n";
+	  CDC_Transmit(1, (uint8_t *)message, strlen(message));
   }
   /* USER CODE END 3 */
 }
