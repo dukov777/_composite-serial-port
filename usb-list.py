@@ -1,3 +1,8 @@
+# Reference: https://stackoverflow.com/questions/440040/how-can-i-parse-the-ioreg-output-in-python
+# 
+# This script is used to parse the output of the ioreg command and extract information about USB interfaces.
+# It can be used to list all USB interfaces, or to find the TTY device for a specific interface.
+
 import plistlib
 import subprocess
 import json
@@ -8,7 +13,7 @@ import argparse
 def get_usb_interfaces():
     # Option 1: Get data from ioreg command
     try:
-        output = subprocess.check_output(["ioreg", "-alw0", "-c", "IOUSBHostInterface"])
+        output = subprocess.check_output(["ioreg", "-arlw0", "-c", "IOUSBHostInterface"])
         pl = plistlib.loads(output, fmt=plistlib.FMT_XML)
         return pl
     except Exception as e:
@@ -152,22 +157,30 @@ def extract_usb_info(pl, interface_name=None):
 
 def main():
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='USB Interface Information Tool')
-    parser.add_argument('interface_name', nargs='?', help='Name of the interface to find TTY device for')
-    parser.add_argument('--list', '-l', action='store_true', help='List all interfaces')
+    parser = argparse.ArgumentParser(description='USB Interface Information Tool',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog='''\
+Example usage:
+
+  usb-list.py -l                               # List all USB interfaces
+  usb-list.py -l --debug file.xml              # List all interfaces from file.xml
+  usb-list.py "STM32 CDC ACM0"                 # Find TTY device for STM32 CDC ACM0
+  usb-list.py "STM32 CDC ACM0" --debug usbio.xml  # Find TTY device from XML file
+''')
+    parser.add_argument('interface_name', nargs='?', 
+                      help='Name of the interface to find TTY device for (e.g., "STM32 CDC ACM0")')
+    parser.add_argument('--list', '-l', action='store_true', 
+                      help='List all interfaces with their details')
+    parser.add_argument('--debug', metavar='XML_FILE',
+                      help='Load data from the given XML file instead of running ioreg command')
     args = parser.parse_args()
     
-    # First try to load from the XML file in the current directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    xml_path = os.path.join(script_dir, 'usbio.xml')
-    
-    if os.path.exists(xml_path):
-        print(f"Loading from file: {xml_path}")
-        pl = load_from_file(xml_path)
+    if args.debug:
+        print(f"Loading from file: {args.debug}")
+        pl = load_from_file(args.debug)
     else:
-        print("File not found, getting data from ioreg command")
+        print("Getting data from ioreg command")
         pl = get_usb_interfaces()
-    
     if not pl:
         print("No data to process")
         return
