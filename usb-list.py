@@ -1,0 +1,134 @@
+import plistlib
+import subprocess
+import json
+import os
+
+def get_usb_interfaces():
+    # Option 1: Get data from ioreg command
+    try:
+        output = subprocess.check_output(["ioreg", "-alw0", "-c", "IOUSBHostInterface"])
+        pl = plistlib.loads(output, fmt=plistlib.FMT_XML)
+        return pl
+    except Exception as e:
+        print(f"Error getting data from ioreg: {e}")
+        return []
+
+def load_from_file(file_path):
+    # Option 2: Load from XML file
+    try:
+        with open(file_path, 'rb') as f:
+            pl = plistlib.load(f)
+            return pl
+    except Exception as e:
+        print(f"Error loading file {file_path}: {e}")
+        return []
+
+def traverse_plist(pl, level=0):
+    """Recursively traverse a plist structure"""
+    indent = "  " * level
+    
+    if isinstance(pl, dict):
+        for key, value in pl.items():
+            if isinstance(value, (dict, list)):
+                print(f"{indent}{key}:")
+                traverse_plist(value, level + 1)
+            else:
+                print(f"{indent}{key}: {value}")
+    elif isinstance(pl, list):
+        print(f"{indent}List with {len(pl)} items:")
+        for i, item in enumerate(pl):
+            print(f"{indent}Item {i+1}:")
+            traverse_plist(item, level + 1)
+    else:
+        print(f"{indent}{pl}")
+
+def extract_usb_info(pl):
+    """Extract useful information from the plist structure"""
+    if not isinstance(pl, list):
+        print("Error: Expected a list at the top level")
+        return
+    
+    print(f"Found {len(pl)} USB interfaces")
+    
+    for i, interface in enumerate(pl):
+        if not isinstance(interface, dict):
+            print(f"\nInterface #{i+1} is not a dictionary, it's a {type(interface)}")
+            continue
+            
+        print(f"\n--- USB Interface #{i+1} ---")
+        
+        # Basic info
+        name = interface.get('IORegistryEntryName', 'Unknown')
+        print(f"Name: {name}")
+        
+        # Interface details
+        print(f"Class: {interface.get('bInterfaceClass', 'Unknown')}")
+        print(f"SubClass: {interface.get('bInterfaceSubClass', 'Unknown')}")
+        print(f"Protocol: {interface.get('bInterfaceProtocol', 'Unknown')}")
+        
+        # Product info
+        if 'USB Product Name' in interface:
+            print(f"Product: {interface['USB Product Name']}")
+        if 'USB Vendor Name' in interface:
+            print(f"Vendor: {interface['USB Vendor Name']}")
+        if 'USB Serial Number' in interface:
+            print(f"Serial: {interface['USB Serial Number']}")
+        
+        # IDs
+        print(f"Vendor ID: {interface.get('idVendor', 'Unknown')}")
+        print(f"Product ID: {interface.get('idProduct', 'Unknown')}")
+        print(f"Location ID: {interface.get('locationID', 'Unknown')}")
+        
+        # Children
+        children = interface.get('IORegistryEntryChildren', [])
+        if children:
+            print(f"\n  Children ({len(children)}):")
+            for j, child in enumerate(children):
+                if not isinstance(child, dict):
+                    print(f"  Child #{j+1} is not a dictionary")
+                    continue
+                    
+                child_name = child.get('IORegistryEntryName', 'Unknown')
+                child_class = child.get('IOClass', 'Unknown')
+                print(f"  - Child #{j+1}: {child_name} (Class: {child_class})")
+                
+                # Look for TTY devices in grandchildren
+                grandchildren = child.get('IORegistryEntryChildren', [])
+                if grandchildren:
+                    print(f"    Grandchildren ({len(grandchildren)}):")
+                    for k, gc in enumerate(grandchildren):
+                        if not isinstance(gc, dict):
+                            continue
+                            
+                        gc_name = gc.get('IORegistryEntryName', 'Unknown')
+                        tty_device = gc.get('IOTTYDevice', None)
+                        if tty_device:
+                            print(f"    - #{k+1}: {gc_name} (TTY: {tty_device})")
+                        else:
+                            print(f"    - #{k+1}: {gc_name}")
+
+def main():
+    # First try to load from the XML file in the current directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    xml_path = os.path.join(script_dir, 'usbio.xml')
+    
+    if os.path.exists(xml_path):
+        print(f"Loading from file: {xml_path}")
+        pl = load_from_file(xml_path)
+    else:
+        print("File not found, getting data from ioreg command")
+        pl = get_usb_interfaces()
+    
+    if not pl:
+        print("No data to process")
+        return
+        
+    # Process the data
+    extract_usb_info(pl)
+    
+    # Uncomment for debugging
+    # print("\nRaw structure:")
+    # traverse_plist(pl)
+
+if __name__ == "__main__":
+    main()
