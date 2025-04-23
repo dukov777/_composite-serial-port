@@ -255,7 +255,7 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgHSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN
         0x0A,                    /* bInterfaceClass: CDC */
         0x00,                    /* bInterfaceSubClass: */
         0x00,                    /* bInterfaceProtocol: */
-        0x00,                    /* iInterface: */
+        0x06,                    /* iInterface: */
 
         /* Endpoint OUT Descriptor */
         0x07,                                /* bLength: Endpoint Descriptor size */
@@ -344,7 +344,7 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgHSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN
         0x0A,                    /* bInterfaceClass: CDC */
         0x00,                    /* bInterfaceSubClass: */
         0x00,                    /* bInterfaceProtocol: */
-        0x00,                    /* iInterface: */
+        0x07,                    /* iInterface: */
 
         /* Endpoint OUT Descriptor */
         0x07,                                /* bLength: Endpoint Descriptor size */
@@ -994,7 +994,7 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgFSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN
         0x0A,                    /* bInterfaceClass: CDC */
         0x00,                    /* bInterfaceSubClass: */
         0x00,                    /* bInterfaceProtocol: */
-        0x00,                    /* iInterface: */
+        0x06,                    /* iInterface: */
 
         /* Endpoint OUT Descriptor */
         0x07,                                /* bLength: Endpoint Descriptor size */
@@ -1084,7 +1084,7 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgFSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN
         0x0A,                    /* bInterfaceClass: CDC */
         0x00,                    /* bInterfaceSubClass: */
         0x00,                    /* bInterfaceProtocol: */
-        0x00,                    /* iInterface: */
+        0x07,                    /* iInterface: */
 
         /* Endpoint OUT Descriptor */
         0x07,                                /* bLength: Endpoint Descriptor size */
