@@ -2,6 +2,8 @@ import plistlib
 import subprocess
 import json
 import os
+import sys
+import argparse
 
 def get_usb_interfaces():
     # Option 1: Get data from ioreg command
@@ -42,12 +44,53 @@ def traverse_plist(pl, level=0):
     else:
         print(f"{indent}{pl}")
 
-def extract_usb_info(pl):
+def find_tty_by_interface_name(pl, interface_name):
+    """Find TTY device for a specific interface name"""
+    if not isinstance(pl, list):
+        print("Error: Expected a list at the top level")
+        return None
+    
+    for interface in pl:
+        if not isinstance(interface, dict):
+            continue
+            
+        name = interface.get('IORegistryEntryName', '')
+        if name != interface_name:
+            continue
+            
+        # Look for data interfaces (class 10) with TTY devices
+        if interface.get('bInterfaceClass') == 10:
+            children = interface.get('IORegistryEntryChildren', [])
+            for child in children:
+                if not isinstance(child, dict):
+                    continue
+                    
+                grandchildren = child.get('IORegistryEntryChildren', [])
+                for gc in grandchildren:
+                    if not isinstance(gc, dict):
+                        continue
+                        
+                    tty_device = gc.get('IOTTYDevice', None)
+                    if tty_device:
+                        return tty_device
+    return None
+
+def extract_usb_info(pl, interface_name=None):
     """Extract useful information from the plist structure"""
     if not isinstance(pl, list):
         print("Error: Expected a list at the top level")
         return
     
+    # If interface_name is provided, only show TTY for that interface
+    if interface_name:
+        tty_device = find_tty_by_interface_name(pl, interface_name)
+        if tty_device:
+            print(f"TTY device for {interface_name}: {tty_device}")
+        else:
+            print(f"No TTY device found for interface: {interface_name}")
+        return
+    
+    # Otherwise show all interfaces
     print(f"Found {len(pl)} USB interfaces")
     
     for i, interface in enumerate(pl):
@@ -108,6 +151,12 @@ def extract_usb_info(pl):
                             print(f"    - #{k+1}: {gc_name}")
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='USB Interface Information Tool')
+    parser.add_argument('interface_name', nargs='?', help='Name of the interface to find TTY device for')
+    parser.add_argument('--list', '-l', action='store_true', help='List all interfaces')
+    args = parser.parse_args()
+    
     # First try to load from the XML file in the current directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     xml_path = os.path.join(script_dir, 'usbio.xml')
@@ -122,13 +171,12 @@ def main():
     if not pl:
         print("No data to process")
         return
-        
-    # Process the data
-    extract_usb_info(pl)
     
-    # Uncomment for debugging
-    # print("\nRaw structure:")
-    # traverse_plist(pl)
+    # Process the data
+    if args.list or not args.interface_name:
+        extract_usb_info(pl)
+    else:
+        extract_usb_info(pl, args.interface_name)
 
 if __name__ == "__main__":
     main()
